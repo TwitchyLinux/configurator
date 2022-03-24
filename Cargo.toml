@@ -1,0 +1,11 @@
+[package]
+name = "configurator"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+druid = {git = "https://github.com/linebender/druid.git", rev = "fc05e965c85fced8720c655685e02478e0530e94", features = ["im"] }
+
+swayipc = "^3.0"
