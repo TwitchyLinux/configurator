@@ -245,7 +245,7 @@ fn main() -> Result<(), PlatformError> {
 
     AppLauncher::with_window(
         WindowDesc::new(build_ui())
-            .title("TwitchyLinux - installer")
+            .title("TwitchyLinux - Configure display")
             .window_size((600.0, 600.0)),
     )
     .launch(model)?;
