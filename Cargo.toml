@@ -7,5 +7,6 @@ edition = "2021"
 
 [dependencies]
 druid = {git = "https://github.com/linebender/druid.git", rev = "fc05e965c85fced8720c655685e02478e0530e94", features = ["im"] }
-
+home = "^0.5"
+structopt = "0.3.2"
 swayipc = "^3.0"

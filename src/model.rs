@@ -1,31 +1,35 @@
 use druid::im::HashMap;
 use druid::{Data, Lens};
 
+use std::path::PathBuf;
 use swayipc::Output;
-
 
 #[derive(Clone, Copy, Data, Debug, PartialEq)]
 pub enum Transform {
-	None,
-	R90,
-	R180,
-	R270
+    None,
+    R90,
+    R180,
+    R270,
 }
 
 impl Default for Transform {
-	fn default() -> Transform {
-		Transform::None
-	}
+    fn default() -> Transform {
+        Transform::None
+    }
 }
 
 impl std::fmt::Display for Transform {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-        	Transform::R90 => "90",
-        	Transform::R180 => "180",
-        	Transform::R270 => "270",
-        	_ => "normal",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Transform::R90 => "90",
+                Transform::R180 => "180",
+                Transform::R270 => "270",
+                _ => "normal",
+            }
+        )
     }
 }
 
@@ -111,6 +115,31 @@ pub struct DisplayInfo {
     pub focused: bool,
 }
 
+impl DisplayInfo {
+    fn config(&self) -> String {
+        let mut line = String::with_capacity(200);
+        line.push_str("output ");
+        line.push_str(&self.name);
+
+        if self.scale.0 < 1.0 || self.scale.0 > 1.0 {
+            line.push_str(" scale ");
+            line.push_str(format!("{:.2}", self.scale.0).as_str());
+        }
+
+        if self.position != (0, 0).into() {
+            line.push_str(" pos ");
+            line.push_str(format!("{} {}", self.position.0, self.position.1).as_str());
+        }
+
+        if self.transform != Transform::None {
+            line.push_str(" transform ");
+            line.push_str(format!("{}", self.transform).as_str());
+        }
+
+        line
+    }
+}
+
 impl From<Output> for DisplayInfo {
     fn from(o: Output) -> Self {
         DisplayInfo {
@@ -124,13 +153,13 @@ impl From<Output> for DisplayInfo {
             size: (o.rect.width as u32, o.rect.height as u32),
             scale: o.scale.unwrap_or(1.).into(),
             transform: match o.transform {
-            	Some(t) => match t.as_str() {
-            		"90" => Transform::R90,
-	            	"180" => Transform::R180,
-	            	"270" => Transform::R270,
-	            	_ => Transform::None,
-            	},
-            	_ => Transform::None,
+                Some(t) => match t.as_str() {
+                    "90" => Transform::R90,
+                    "180" => Transform::R180,
+                    "270" => Transform::R270,
+                    _ => Transform::None,
+                },
+                _ => Transform::None,
             },
 
             id: o.id,
@@ -156,45 +185,86 @@ impl From<Vec<Output>> for AppData {
 }
 
 impl AppData {
-	pub fn apply_displays(&mut self) {
-		let mut conn = swayipc::Connection::new().unwrap();
-		let mut outputs = conn.get_outputs().unwrap();
-		for o in outputs {
-			if let Some(our) = self.display_geo.get(&o.name) {
-				let live = o.into();
-				if !our.same(&live) {
-					let mut cmd = String::with_capacity(200);
-					cmd.push_str("output ");
-					cmd.push_str(&live.name);
+    pub fn save_config(&self, mut base_path: PathBuf) -> Result<(), std::io::Error> {
+        use std::fs::OpenOptions;
+        use std::io::{prelude::*, BufReader};
 
-					if !our.scale.same(&live.scale) {
-						cmd.push_str(" scale ");
-						cmd.push_str(format!("{:.2}", our.scale.0).as_str());
-					}
+        base_path.push("displays");
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&base_path)?;
 
-					if !our.position.same(&live.position) {
-						cmd.push_str(" pos ");
-						cmd.push_str(format!("{} {}", our.position.0, our.position.1).as_str());
-					}
+        let mut existing_lines: HashMap<String, String> = HashMap::new();
+        let reader = BufReader::new(file);
+        for line in reader.lines() {
+            let line = &line?;
+            let line = line.trim();
+            if line.starts_with("#") {
+                continue;
+            }
+            let spl: Vec<_> = line.clone().split(" ").collect();
+            if spl.len() > 3 && spl[0] == "output" && !self.display_geo.contains_key(spl[1]) {
+                existing_lines.insert(spl[1].into(), line.into());
+            }
+        }
 
-					if !our.transform.same(&live.transform) {
-						cmd.push_str(" transform ");
-						cmd.push_str(format!("{}", our.transform).as_str());
-					}
+        println!("{:?}", existing_lines);
+        let mut file = OpenOptions::new()
+            .read(false)
+            .write(true)
+            .truncate(true)
+            .open(&base_path)?;
 
-					println!("command = {:?}", cmd);
-					conn.run_command(cmd);
-				}
-			}
-		}
+        write!(file, "# Automatically generated - do not edit!!\n\n")?;
+        for (_, l) in existing_lines {
+            write!(file, "{}\n", l)?;
+        }
+        for (_, d) in self.display_geo.iter() {
+            write!(file, "{}\n", d.config())?;
+        }
 
+        Ok(())
+    }
 
-		// Update ourselves based on the new reality of things
-		outputs = conn.get_outputs().unwrap();
-		*self = outputs.into();
-	}
+    pub fn apply_displays(&mut self) {
+        let mut conn = swayipc::Connection::new().unwrap();
+        let mut outputs = conn.get_outputs().unwrap();
+        for o in outputs {
+            if let Some(our) = self.display_geo.get(&o.name) {
+                let live = o.into();
+                if !our.same(&live) {
+                    let mut cmd = String::with_capacity(200);
+                    cmd.push_str("output ");
+                    cmd.push_str(&live.name);
+
+                    if !our.scale.same(&live.scale) {
+                        cmd.push_str(" scale ");
+                        cmd.push_str(format!("{:.2}", our.scale.0).as_str());
+                    }
+
+                    if !our.position.same(&live.position) {
+                        cmd.push_str(" pos ");
+                        cmd.push_str(format!("{} {}", our.position.0, our.position.1).as_str());
+                    }
+
+                    if !our.transform.same(&live.transform) {
+                        cmd.push_str(" transform ");
+                        cmd.push_str(format!("{}", our.transform).as_str());
+                    }
+
+                    println!("command = {:?}", cmd);
+                    conn.run_command(cmd);
+                }
+            }
+        }
+
+        // Update ourselves based on the new reality of things
+        outputs = conn.get_outputs().unwrap();
+        *self = outputs.into();
+    }
 }
-
 
 #[derive(Clone, Default, Debug)]
 pub struct FocusedDisplay;
