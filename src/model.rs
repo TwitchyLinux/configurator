@@ -121,10 +121,8 @@ impl DisplayInfo {
         line.push_str("output ");
         line.push_str(&self.name);
 
-        if self.scale.0 < 1.0 || self.scale.0 > 1.0 {
-            line.push_str(" scale ");
-            line.push_str(format!("{:.2}", self.scale.0).as_str());
-        }
+        line.push_str(" scale ");
+        line.push_str(format!("{:.2}", self.scale.0).as_str());
 
         if self.position != (0, 0).into() {
             line.push_str(" pos ");
