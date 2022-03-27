@@ -32,66 +32,28 @@ fn build_name_row() -> impl Widget<AppData> {
         )
 }
 
-fn build_serial_row() -> impl Widget<AppData> {
+fn build_info_row() -> impl Widget<AppData> {
     Flex::row()
         .must_fill_main_axis(true)
         .main_axis_alignment(MainAxisAlignment::Start)
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .with_default_spacer()
-        .with_flex_child(SizedBox::new(Label::new("Serial")).expand_width(), 0.3)
+        .with_flex_child(SizedBox::new(Label::new("Model information")).expand_width(), 0.3)
         .with_default_spacer()
         .with_flex_child(
             SizedBox::new(
                 Label::new(|d: &AppData, _: &druid::Env| {
                     FocusedDisplay.with(d, |d| {
                         d.as_ref()
-                            .map_or("<no selection>".to_string(), |d| d.serial.clone())
-                    })
-                })
-                .with_text_color(Color::rgb8(200, 200, 200)),
-            )
-            .expand_width(),
-            0.7,
-        )
-}
-
-fn build_make_row() -> impl Widget<AppData> {
-    Flex::row()
-        .must_fill_main_axis(true)
-        .main_axis_alignment(MainAxisAlignment::Start)
-        .cross_axis_alignment(CrossAxisAlignment::Center)
-        .with_default_spacer()
-        .with_flex_child(SizedBox::new(Label::new("Make")).expand_width(), 0.3)
-        .with_default_spacer()
-        .with_flex_child(
-            SizedBox::new(
-                Label::new(|d: &AppData, _: &druid::Env| {
-                    FocusedDisplay.with(d, |d| {
-                        d.as_ref()
-                            .map_or("<no selection>".to_string(), |d| d.make.clone())
-                    })
-                })
-                .with_text_color(Color::rgb8(200, 200, 200)),
-            )
-            .expand_width(),
-            0.7,
-        )
-}
-
-fn build_model_row() -> impl Widget<AppData> {
-    Flex::row()
-        .must_fill_main_axis(true)
-        .main_axis_alignment(MainAxisAlignment::Start)
-        .cross_axis_alignment(CrossAxisAlignment::Center)
-        .with_default_spacer()
-        .with_flex_child(SizedBox::new(Label::new("Model")).expand_width(), 0.3)
-        .with_default_spacer()
-        .with_flex_child(
-            SizedBox::new(
-                Label::new(|d: &AppData, _: &druid::Env| {
-                    FocusedDisplay.with(d, |d| {
-                        d.as_ref()
-                            .map_or("<no selection>".to_string(), |d| d.model.clone())
+                            .map_or("<no selection>".to_string(), |d| {
+                                let mut o = d.make.clone();
+                                o.push_str(", ");
+                                o.push_str(&d.model);
+                                o.push_str(" (");
+                                o.push_str(&d.serial);
+                                o.push(')');
+                                o
+                            })
                     })
                 })
                 .with_text_color(Color::rgb8(200, 200, 200)),
@@ -130,6 +92,7 @@ fn build_pos_input() -> impl Widget<AppData> {
             .expand_width(),
             0.7,
         )
+        .with_spacer(2.)
 }
 
 fn build_scale_input() -> impl Widget<AppData> {
@@ -161,6 +124,7 @@ fn build_scale_input() -> impl Widget<AppData> {
             .expand_width(),
             0.7,
         )
+        .with_spacer(2.)
 }
 
 fn build_rotation_input() -> impl Widget<AppData> {
@@ -239,11 +203,10 @@ fn build_ui(args: &Opt) -> impl Widget<AppData> {
                     .main_axis_alignment(MainAxisAlignment::Start)
                     .cross_axis_alignment(CrossAxisAlignment::Center)
                     .with_flex_child(build_name_row(), 0.1)
-                    .with_flex_child(build_serial_row(), 0.1)
-                    .with_flex_child(build_make_row(), 0.1)
-                    .with_flex_child(build_model_row(), 0.1)
+                    .with_flex_child(build_info_row(), 0.1)
                     .with_default_spacer()
                     .with_flex_child(build_pos_input(), 0.1)
+                    .with_spacer(2.)
                     .with_flex_child(build_scale_input(), 0.1)
                     .with_default_spacer()
                     .with_flex_child(build_rotation_input(), 0.2),
