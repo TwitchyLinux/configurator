@@ -1,4 +1,4 @@
-use druid::im::HashMap;
+use druid::im::{HashMap, Vector};
 use druid::{Data, Lens};
 
 use std::path::PathBuf;
@@ -97,6 +97,25 @@ impl std::fmt::Display for Pos {
     }
 }
 
+#[derive(Clone, Default, Data, Debug, Lens)]
+pub struct DisplayMode {
+    pub width: i32,
+    pub height: i32,
+    pub refresh: i32,
+    pub selected: bool,
+}
+
+impl From<swayipc::Mode> for DisplayMode {
+    fn from(m: swayipc::Mode) -> Self {
+        DisplayMode {
+            width: m.width,
+            height: m.height,
+            refresh: m.refresh,
+            selected: false,
+        }
+    }
+}
+
 #[derive(Clone, Default, Data, Lens)]
 pub struct DisplayInfo {
     pub name: String,
@@ -109,6 +128,8 @@ pub struct DisplayInfo {
     pub size: (u32, u32),
     pub scale: Scale,
     pub transform: Transform,
+
+    pub modes: Vector<DisplayMode>,
 
     pub id: Option<i64>,
 
@@ -134,12 +155,32 @@ impl DisplayInfo {
             line.push_str(format!("{}", self.transform).as_str());
         }
 
+        for m in self.modes.iter() {
+            if m.selected {
+                line.push_str(" resolution ");
+                line.push_str(
+                    format!("{}x{}@{:.2}Hz", m.width, m.height, m.refresh as f64 / 1000.).as_str(),
+                );
+            }
+        }
+
         line
     }
 }
 
 impl From<Output> for DisplayInfo {
     fn from(o: Output) -> Self {
+        let mut modes: Vector<DisplayMode> = o.modes.into_iter().map(|m| m.into()).collect();
+        if let Some(cm) = o.current_mode {
+            let cm = cm.into();
+            for m in modes.iter_mut() {
+                if m.same(&cm) {
+                    m.selected = true;
+                    break;
+                }
+            }
+        }
+
         DisplayInfo {
             name: o.name,
             make: o.make,
@@ -160,6 +201,7 @@ impl From<Output> for DisplayInfo {
                 _ => Transform::None,
             },
 
+            modes,
             id: o.id,
             focused: false,
         }
@@ -208,7 +250,6 @@ impl AppData {
             }
         }
 
-        println!("{:?}", existing_lines);
         let mut file = OpenOptions::new()
             .read(false)
             .write(true)
@@ -250,6 +291,21 @@ impl AppData {
                     if !our.transform.same(&live.transform) {
                         cmd.push_str(" transform ");
                         cmd.push_str(format!("{}", our.transform).as_str());
+                    }
+
+                    for m in our.modes.iter() {
+                        if m.selected {
+                            cmd.push_str(" resolution ");
+                            cmd.push_str(
+                                format!(
+                                    "{}x{}@{:.2}Hz",
+                                    m.width,
+                                    m.height,
+                                    m.refresh as f64 / 1000.
+                                )
+                                .as_str(),
+                            );
+                        }
                     }
 
                     println!("command = {:?}", cmd);
