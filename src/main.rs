@@ -141,7 +141,7 @@ fn build_rotation_input() -> impl Widget<AppData> {
         .with_flex_child(
             Scroll::new(
                 SizedBox::new(
-                    RadioGroup::new(vec![
+                    RadioGroup::row(vec![
                         ("None", Transform::None),
                         ("90", Transform::R90),
                         ("180", Transform::R180),
@@ -162,7 +162,7 @@ fn build_rotation_input() -> impl Widget<AppData> {
                 )
                 .expand_width(),
             )
-            .vertical(),
+            .horizontal(),
             0.7,
         )
 }

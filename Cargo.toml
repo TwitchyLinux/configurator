@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-druid = {git = "https://github.com/linebender/druid.git", rev = "fc05e965c85fced8720c655685e02478e0530e94", features = ["im"] }
+druid = {git = "https://github.com/linebender/druid.git", rev = "aa4b36658be4164f2a30ffebeef434638dbfc4f8", features = ["im"] }
 home = "^0.5"
 structopt = "0.3.2"
 swayipc = "^3.0"
