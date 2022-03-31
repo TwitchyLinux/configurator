@@ -2,7 +2,7 @@ use druid::piet::{FontFamily, Text, TextLayoutBuilder};
 use druid::widget::prelude::*;
 use druid::{Affine, Color};
 
-use crate::DisplayInfo;
+use crate::model::display::Display;
 use druid::im::HashMap;
 
 #[derive(Clone, Default, Debug)]
@@ -29,7 +29,7 @@ impl Default for MonitorView {
 }
 
 impl MonitorView {
-    fn window_space_bounds(&self, data: &HashMap<String, DisplayInfo>) -> ((f64, f64), (f64, f64)) {
+    fn window_space_bounds(&self, data: &HashMap<String, Display>) -> ((f64, f64), (f64, f64)) {
         data.iter().fold(
             ((f64::MAX, f64::MAX), (f64::MIN, f64::MIN)),
             |acc, (_, x)| {
@@ -47,7 +47,7 @@ impl MonitorView {
         )
     }
 
-    fn center_displays(&mut self, data: &HashMap<String, DisplayInfo>, bounds: Size) {
+    fn center_displays(&mut self, data: &HashMap<String, Display>, bounds: Size) {
         let (min, max) = self.window_space_bounds(data);
         let (width, height) = (max.0 - min.0, max.1 - min.1);
         let min_box = (bounds - Size::new(40., 50.))
@@ -75,7 +75,7 @@ impl MonitorView {
         )
     }
 
-    fn hit_test(&self, data: &HashMap<String, DisplayInfo>, pos: druid::Point) -> Option<String> {
+    fn hit_test(&self, data: &HashMap<String, Display>, pos: druid::Point) -> Option<String> {
         let coords = self.unscale_coords(pos.into());
 
         for (_, d) in data {
@@ -93,13 +93,13 @@ impl MonitorView {
         None
     }
 
-    fn update_focus(&self, data: &mut HashMap<String, DisplayInfo>, name: &String) {
+    fn update_focus(&self, data: &mut HashMap<String, Display>, name: &String) {
         for (n, d) in data.iter_mut() {
             d.focused = n == name;
         }
     }
 
-    fn normalize_coords(&self, data: &mut HashMap<String, DisplayInfo>) {
+    fn normalize_coords(&self, data: &mut HashMap<String, Display>) {
         let (min, _) = self.window_space_bounds(data);
 
         for (_, d) in data.iter_mut() {
@@ -117,12 +117,12 @@ impl MonitorView {
     }
 }
 
-impl Widget<HashMap<String, DisplayInfo>> for MonitorView {
+impl Widget<HashMap<String, Display>> for MonitorView {
     fn event(
         &mut self,
         ctx: &mut EventCtx,
         event: &Event,
-        data: &mut HashMap<String, DisplayInfo>,
+        data: &mut HashMap<String, Display>,
         _env: &Env,
     ) {
         match event {
@@ -199,7 +199,7 @@ impl Widget<HashMap<String, DisplayInfo>> for MonitorView {
         &mut self,
         _ctx: &mut LifeCycleCtx,
         _event: &LifeCycle,
-        _data: &HashMap<String, DisplayInfo>,
+        _data: &HashMap<String, Display>,
         _env: &Env,
     ) {
     }
@@ -207,8 +207,8 @@ impl Widget<HashMap<String, DisplayInfo>> for MonitorView {
     fn update(
         &mut self,
         ctx: &mut UpdateCtx,
-        _old_data: &HashMap<String, DisplayInfo>,
-        _data: &HashMap<String, DisplayInfo>,
+        _old_data: &HashMap<String, Display>,
+        _data: &HashMap<String, Display>,
         _env: &Env,
     ) {
         ctx.request_paint();
@@ -218,7 +218,7 @@ impl Widget<HashMap<String, DisplayInfo>> for MonitorView {
         &mut self,
         _layout_ctx: &mut LayoutCtx,
         bc: &BoxConstraints,
-        data: &HashMap<String, DisplayInfo>,
+        data: &HashMap<String, Display>,
         _env: &Env,
     ) -> Size {
         let size = bc.constrain(Size::new(600.0, 500.0));
@@ -230,7 +230,7 @@ impl Widget<HashMap<String, DisplayInfo>> for MonitorView {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx, data: &HashMap<String, DisplayInfo>, env: &Env) {
+    fn paint(&mut self, ctx: &mut PaintCtx, data: &HashMap<String, Display>, env: &Env) {
         // Clear the whole widget
         let size = ctx.size();
         let rect = size.to_rect();

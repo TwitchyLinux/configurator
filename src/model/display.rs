@@ -98,16 +98,16 @@ impl std::fmt::Display for Pos {
 }
 
 #[derive(Clone, Default, Data, Debug, Lens)]
-pub struct DisplayMode {
+pub struct Mode {
     pub width: i32,
     pub height: i32,
     pub refresh: i32,
     pub selected: bool,
 }
 
-impl From<swayipc::Mode> for DisplayMode {
+impl From<swayipc::Mode> for Mode {
     fn from(m: swayipc::Mode) -> Self {
-        DisplayMode {
+        Mode {
             width: m.width,
             height: m.height,
             refresh: m.refresh,
@@ -117,7 +117,7 @@ impl From<swayipc::Mode> for DisplayMode {
 }
 
 #[derive(Clone, Default, Data, Lens)]
-pub struct DisplayInfo {
+pub struct Display {
     pub name: String,
     pub make: String,
     pub model: String,
@@ -129,14 +129,14 @@ pub struct DisplayInfo {
     pub scale: Scale,
     pub transform: Transform,
 
-    pub modes: Vector<DisplayMode>,
+    pub modes: Vector<Mode>,
 
     pub id: Option<i64>,
 
     pub focused: bool,
 }
 
-impl DisplayInfo {
+impl Display {
     fn config(&self) -> String {
         let mut line = String::with_capacity(200);
         line.push_str("output ");
@@ -168,9 +168,9 @@ impl DisplayInfo {
     }
 }
 
-impl From<Output> for DisplayInfo {
+impl From<Output> for Display {
     fn from(o: Output) -> Self {
-        let mut modes: Vector<DisplayMode> = o.modes.into_iter().map(|m| m.into()).collect();
+        let mut modes: Vector<Mode> = o.modes.into_iter().map(|m| m.into()).collect();
         if let Some(cm) = o.current_mode {
             let cm = cm.into();
             for m in modes.iter_mut() {
@@ -181,7 +181,7 @@ impl From<Output> for DisplayInfo {
             }
         }
 
-        DisplayInfo {
+        Display {
             name: o.name,
             make: o.make,
             model: o.model,
@@ -209,22 +209,22 @@ impl From<Output> for DisplayInfo {
 }
 
 #[derive(Clone, Default, Data, Lens)]
-pub struct AppData {
-    pub display_geo: HashMap<String, DisplayInfo>,
+pub struct App {
+    pub display_geo: HashMap<String, Display>,
 }
 
-impl From<Vec<Output>> for AppData {
+impl From<Vec<Output>> for App {
     fn from(outputs: Vec<Output>) -> Self {
         let mut display_geo = HashMap::new();
         for o in outputs {
             display_geo.insert(o.name.clone(), o.into());
         }
 
-        AppData { display_geo }
+        App { display_geo }
     }
 }
 
-impl AppData {
+impl App {
     pub fn save_config(&self, mut base_path: PathBuf) -> Result<(), std::io::Error> {
         use std::fs::OpenOptions;
         use std::io::{prelude::*, BufReader};
@@ -317,33 +317,5 @@ impl AppData {
         // Update ourselves based on the new reality of things
         outputs = conn.get_outputs().unwrap();
         *self = outputs.into();
-    }
-}
-
-#[derive(Clone, Default, Debug)]
-pub struct FocusedDisplay;
-
-impl Lens<AppData, Option<DisplayInfo>> for FocusedDisplay {
-    fn with<V, F: FnOnce(&Option<DisplayInfo>) -> V>(&self, data: &AppData, f: F) -> V {
-        for (_, v) in data.display_geo.iter() {
-            if v.focused {
-                return f(&Some(v.clone()));
-            }
-        }
-
-        f(&None)
-    }
-
-    fn with_mut<V, F: FnOnce(&mut Option<DisplayInfo>) -> V>(&self, data: &mut AppData, f: F) -> V {
-        for (_, v) in data.display_geo.iter_mut() {
-            if v.focused {
-                let mut tmp = Some(v.clone());
-                let ret = f(&mut tmp);
-                *v = tmp.unwrap();
-                return ret;
-            }
-        }
-
-        f(&mut None)
     }
 }
