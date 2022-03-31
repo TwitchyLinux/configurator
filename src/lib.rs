@@ -29,3 +29,17 @@ pub struct Opt {
     )]
     pub file: PathBuf,
 }
+
+use druid::{widget::Controller, Env, Event, EventCtx, Widget};
+pub struct EscExiter;
+
+impl<T, W: Widget<T>> Controller<T, W> for EscExiter {
+    fn event(&mut self, child: &mut W, ctx: &mut EventCtx, event: &Event, data: &mut T, env: &Env) {
+        if let Event::KeyDown(key) = event {
+            if key.code == druid::Code::Escape {
+                ctx.window().close();
+            }
+        }
+        child.event(ctx, event, data, env)
+    }
+}

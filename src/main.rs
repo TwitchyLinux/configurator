@@ -1,7 +1,7 @@
-use druid::{AppLauncher, PlatformError, WindowDesc};
+use druid::{AppLauncher, PlatformError, WidgetExt, WindowDesc};
 use structopt::StructOpt;
 
-use configurator::{Cmd, Opt};
+use configurator::{Cmd, EscExiter, Opt};
 
 fn main() -> Result<(), PlatformError> {
     let mut args = Opt::from_args();
@@ -22,7 +22,7 @@ fn main() -> Result<(), PlatformError> {
             let model: App = conn.get_outputs().unwrap().into();
 
             return AppLauncher::with_window(
-                WindowDesc::new(build_ui(&args))
+                WindowDesc::new(build_ui(&args).controller(EscExiter{}))
                     .title("TwitchyLinux - Configure display")
                     .window_size((600.0, 700.0)),
             )
