@@ -20,15 +20,13 @@ fn build_name_row() -> impl Widget<App> {
         .with_flex_child(SizedBox::new(Label::new("Name")).expand_width(), 0.3)
         .with_default_spacer()
         .with_flex_child(
-            SizedBox::new(
-                Label::new(|d: &App, _: &druid::Env| {
-                    FocusedDisplay.with(d, |d| {
-                        d.as_ref()
-                            .map_or("<no selection>".to_string(), |d| d.name.clone())
-                    })
+            Label::new(|d: &App, _: &druid::Env| {
+                FocusedDisplay.with(d, |d| {
+                    d.as_ref()
+                        .map_or("<no selection>".to_string(), |d| d.name.clone())
                 })
-                .with_text_color(Color::rgb8(200, 200, 200)),
-            )
+            })
+            .with_text_color(Color::rgb8(200, 200, 200))
             .expand_width(),
             0.7,
         )
@@ -46,22 +44,20 @@ fn build_info_row() -> impl Widget<App> {
         )
         .with_default_spacer()
         .with_flex_child(
-            SizedBox::new(
-                Label::new(|d: &App, _: &druid::Env| {
-                    FocusedDisplay.with(d, |d| {
-                        d.as_ref().map_or("<no selection>".to_string(), |d| {
-                            let mut o = d.make.clone();
-                            o.push_str(", ");
-                            o.push_str(&d.model);
-                            o.push_str(" (");
-                            o.push_str(&d.serial);
-                            o.push(')');
-                            o
-                        })
+            Label::new(|d: &App, _: &druid::Env| {
+                FocusedDisplay.with(d, |d| {
+                    d.as_ref().map_or("<no selection>".to_string(), |d| {
+                        let mut o = d.make.clone();
+                        o.push_str(", ");
+                        o.push_str(&d.model);
+                        o.push_str(" (");
+                        o.push_str(&d.serial);
+                        o.push(')');
+                        o
                     })
                 })
-                .with_text_color(Color::rgb8(200, 200, 200)),
-            )
+            })
+            .with_text_color(Color::rgb8(200, 200, 200))
             .expand_width(),
             0.7,
         )
@@ -76,24 +72,22 @@ fn build_pos_input() -> impl Widget<App> {
         .with_flex_child(SizedBox::new(Label::new("Position")).expand_width(), 0.3)
         .with_default_spacer()
         .with_flex_child(
-            SizedBox::new(
-                TextBox::new()
-                    .with_formatter(ParseFormatter::<Pos>::new())
-                    .update_data_while_editing(true)
-                    .lens(
-                        FocusedDisplay
-                            .map(
-                                |x| x.as_ref().unwrap_or(&Display::default()).clone(),
-                                |x, y| {
-                                    if x.is_some() {
-                                        *x = Some(y)
-                                    }
-                                },
-                            )
-                            .then(Display::position),
-                    ),
-            )
-            .expand_width(),
+            TextBox::new()
+                .with_formatter(ParseFormatter::<Pos>::new())
+                .update_data_while_editing(true)
+                .lens(
+                    FocusedDisplay
+                        .map(
+                            |x| x.as_ref().unwrap_or(&Display::default()).clone(),
+                            |x, y| {
+                                if x.is_some() {
+                                    *x = Some(y)
+                                }
+                            },
+                        )
+                        .then(Display::position),
+                )
+                .expand_width(),
             0.7,
         )
         .with_spacer(2.)
@@ -105,27 +99,25 @@ fn build_scale_input() -> impl Widget<App> {
         .main_axis_alignment(MainAxisAlignment::Start)
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .with_default_spacer()
-        .with_flex_child(SizedBox::new(Label::new("Scale")).expand_width(), 0.3)
+        .with_flex_child(Label::new("Scale").expand_width(), 0.3)
         .with_default_spacer()
         .with_flex_child(
-            SizedBox::new(
-                TextBox::new()
-                    .with_formatter(ParseFormatter::<Scale>::new())
-                    .update_data_while_editing(true)
-                    .lens(
-                        FocusedDisplay
-                            .map(
-                                |x| x.as_ref().unwrap_or(&Display::default()).clone(),
-                                |x, y| {
-                                    if x.is_some() {
-                                        *x = Some(y)
-                                    }
-                                },
-                            )
-                            .then(Display::scale),
-                    ),
-            )
-            .expand_width(),
+            TextBox::new()
+                .with_formatter(ParseFormatter::<Scale>::new())
+                .update_data_while_editing(true)
+                .lens(
+                    FocusedDisplay
+                        .map(
+                            |x| x.as_ref().unwrap_or(&Display::default()).clone(),
+                            |x, y| {
+                                if x.is_some() {
+                                    *x = Some(y)
+                                }
+                            },
+                        )
+                        .then(Display::scale),
+                )
+                .expand_width(),
             0.7,
         )
         .with_spacer(2.)
@@ -141,25 +133,23 @@ fn build_rotation_input() -> impl Widget<App> {
         .with_default_spacer()
         .with_flex_child(
             Scroll::new(
-                SizedBox::new(
-                    RadioGroup::row(vec![
-                        ("None", Transform::None),
-                        ("90", Transform::R90),
-                        ("180", Transform::R180),
-                        ("270", Transform::R270),
-                    ])
-                    .lens(
-                        FocusedDisplay
-                            .map(
-                                |x| x.as_ref().unwrap_or(&Display::default()).clone(),
-                                |x, y| {
-                                    if x.is_some() {
-                                        *x = Some(y)
-                                    }
-                                },
-                            )
-                            .then(Display::transform),
-                    ),
+                RadioGroup::row(vec![
+                    ("None", Transform::None),
+                    ("90", Transform::R90),
+                    ("180", Transform::R180),
+                    ("270", Transform::R270),
+                ])
+                .lens(
+                    FocusedDisplay
+                        .map(
+                            |x| x.as_ref().unwrap_or(&Display::default()).clone(),
+                            |x, y| {
+                                if x.is_some() {
+                                    *x = Some(y)
+                                }
+                            },
+                        )
+                        .then(Display::transform),
                 )
                 .expand_width(),
             )
@@ -223,25 +213,23 @@ fn build_mode_input() -> impl Widget<App> {
                         );
                     });
 
-                    SizedBox::new(
-                        Label::new(|item: &Mode, _env: &_| {
-                            format!(
-                                "{}x{}, {:.2} Hz",
-                                item.width,
-                                item.height,
-                                item.refresh as f64 / 1000.
-                            )
-                        })
-                        .align_vertical(druid::UnitPoint::LEFT)
-                        .background(painter)
-                        .on_click(move |ctx, data: &mut Mode, _env| {
-                            ctx.submit_command(druid::Command::new(
-                                MODE_SELECTED_ACTION,
-                                data.clone(),
-                                druid::Target::Auto,
-                            ))
-                        }),
-                    )
+                    Label::new(|item: &Mode, _env: &_| {
+                        format!(
+                            "{}x{}, {:.2} Hz",
+                            item.width,
+                            item.height,
+                            item.refresh as f64 / 1000.
+                        )
+                    })
+                    .align_vertical(druid::UnitPoint::LEFT)
+                    .background(painter)
+                    .on_click(move |ctx, data: &mut Mode, _env| {
+                        ctx.submit_command(druid::Command::new(
+                            MODE_SELECTED_ACTION,
+                            data.clone(),
+                            druid::Target::Auto,
+                        ))
+                    })
                     .expand_width()
                 })
                 .lens(
@@ -259,7 +247,7 @@ fn build_mode_input() -> impl Widget<App> {
                 .controller(SingleModeController {}),
             )
             .vertical()
-            .fix_height(120.),
+            .expand_height(),
             0.7,
         )
 }
@@ -302,20 +290,21 @@ pub fn build_ui(args: &Opt) -> impl Widget<App> {
                     .must_fill_main_axis(true)
                     .main_axis_alignment(MainAxisAlignment::Start)
                     .cross_axis_alignment(CrossAxisAlignment::Center)
-                    .with_flex_child(build_name_row(), 0.1)
-                    .with_flex_child(build_info_row(), 0.1)
+                    .with_child(build_name_row())
+                    .with_child(build_info_row())
                     .with_default_spacer()
-                    .with_flex_child(build_pos_input(), 0.1)
+                    .with_child(build_pos_input())
                     .with_spacer(2.)
-                    .with_flex_child(build_scale_input(), 0.1)
+                    .with_child(build_scale_input())
                     .with_default_spacer()
-                    .with_flex_child(build_rotation_input(), 0.2)
+                    .with_child(build_rotation_input())
                     .with_default_spacer()
                     .with_flex_child(build_mode_input(), 0.5),
                 0.9,
             )
             .with_default_spacer()
-            .with_flex_child(build_buttons(args), 0.2),
+            .with_child(build_buttons(args))
+            .padding(2.),
     )
     .bar_size(2.)
     .solid_bar(true)

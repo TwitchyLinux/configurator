@@ -1,3 +1,4 @@
+pub mod bluetooth;
 pub mod display;
 pub mod lens;
 pub mod model;
@@ -11,6 +12,8 @@ use structopt::StructOpt;
 pub enum Cmd {
     /// Open a UI to configure the displays.
     Display,
+    /// Open a UI to configure bluetooth.
+    Bluetooth,
 }
 
 #[derive(Debug, StructOpt, Clone)]

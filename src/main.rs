@@ -22,8 +22,21 @@ fn main() -> Result<(), PlatformError> {
             let model: App = conn.get_outputs().unwrap().into();
 
             return AppLauncher::with_window(
-                WindowDesc::new(build_ui(&args).controller(EscExiter{}))
+                WindowDesc::new(build_ui(&args).controller(EscExiter {}))
                     .title("TwitchyLinux - Configure display")
+                    .window_size((600.0, 700.0)),
+            )
+            .launch(model);
+        }
+
+        Cmd::Bluetooth => {
+            use configurator::{bluetooth::build_ui, model::bluetooth::App};
+
+            let model: App = App::default();
+
+            return AppLauncher::with_window(
+                WindowDesc::new(build_ui(&args).controller(EscExiter {}))
+                    .title("TwitchyLinux - Configure bluetooth")
                     .window_size((600.0, 700.0)),
             )
             .launch(model);
