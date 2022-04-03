@@ -10,3 +10,5 @@ druid = {git = "https://github.com/linebender/druid.git", rev = "aa4b36658be4164
 home = "^0.5"
 structopt = "0.3.2"
 swayipc = "^3.0"
+bluez = {git = "https://github.com/laptou/bluez-rs", rev = "374c5c59f4fd1e69927cd9abf05eb64fae454a8a"}
+futures = "^0.3"

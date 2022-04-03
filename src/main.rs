@@ -30,16 +30,23 @@ fn main() -> Result<(), PlatformError> {
         }
 
         Cmd::Bluetooth => {
-            use configurator::{bluetooth::build_ui, model::bluetooth::App};
+            use configurator::{
+                bluetooth::{build_ui, BluetoothDelegate},
+                model::bluetooth::App,
+            };
 
             let model: App = App::default();
 
-            return AppLauncher::with_window(
+            let launcher = AppLauncher::with_window(
                 WindowDesc::new(build_ui(&args).controller(EscExiter {}))
                     .title("TwitchyLinux - Configure bluetooth")
-                    .window_size((600.0, 700.0)),
-            )
-            .launch(model);
+                    .window_size((700.0, 600.0)),
+            );
+            let sink = launcher.get_external_handle();
+
+            return launcher
+                .delegate(BluetoothDelegate::new(sink))
+                .launch(model);
         }
     }
 

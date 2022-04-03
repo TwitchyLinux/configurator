@@ -1,7 +1,10 @@
 use druid::text::ParseFormatter;
-use druid::{Color, Lens, LensExt, Widget, WidgetExt};
+use druid::{
+    AppDelegate, Color, Command, DelegateCtx, ExtEventSink, Handled, Lens, LensExt, Selector,
+    Target, Widget, WidgetExt,
+};
 
-use crate::model::bluetooth::App;
+use crate::model::bluetooth::{commands, App};
 
 use crate::Opt;
 use druid::widget::prelude::*;
@@ -9,6 +12,89 @@ use druid::widget::{
     Button, Controller, CrossAxisAlignment, Flex, Label, List, MainAxisAlignment, Painter,
     RadioGroup, Scroll, SizedBox, Split, Switch, TextBox,
 };
+
+use bluez::management::client::*;
+use futures::executor::block_on;
+use std::sync::mpsc;
+use std::thread;
+
+pub struct BluetoothDelegate {
+    thread: thread::JoinHandle<()>,
+    tx: mpsc::Sender<u32>,
+}
+
+impl BluetoothDelegate {
+    pub fn new(sink: ExtEventSink) -> Self {
+        let (tx, rx) = mpsc::channel();
+
+        BluetoothDelegate {
+            thread: thread::spawn(move || {
+                let rx: mpsc::Receiver<u32> = rx;
+                let sink: ExtEventSink = sink;
+
+                let mut client = match ManagementClient::new() {
+                    Ok(client) => client,
+                    Err(e) => {
+                        sink.submit_command(
+                            commands::UPDATE_STATUS,
+                            String::from(format!("Error 1: {:?}", e)),
+                            Target::Auto,
+                        );
+                        return;
+                    }
+                };
+
+                let controllers = match block_on(client.get_controller_list()) {
+                    Ok(controllers) => controllers,
+                    Err(e) => {
+                        sink.submit_command(
+                            commands::UPDATE_STATUS,
+                            String::from(format!("Error 2: {:?}", e)),
+                            Target::Auto,
+                        );
+                        return;
+                    }
+                };
+                if controllers.len() == 0 {
+                    sink.submit_command(
+                        commands::UPDATE_STATUS,
+                        "No bluetooth controllers found!".to_string(),
+                        Target::Auto,
+                    );
+                    return;
+                }
+
+                println!("controllers: {:?}", controllers);
+            }),
+            tx,
+        }
+    }
+}
+
+impl AppDelegate<App> for BluetoothDelegate {
+    fn command(
+        &mut self,
+        _ctx: &mut DelegateCtx,
+        _target: Target,
+        cmd: &Command,
+        data: &mut App,
+        _env: &Env,
+    ) -> Handled {
+        // UI -> worker
+        if let Some(number) = cmd.get(commands::CONNECT_TO_DEVICE) {
+            // TODO: stuff
+            return Handled::Yes;
+        }
+
+        // worker -> UI
+        if let Some(msg) = cmd.get(commands::UPDATE_STATUS) {
+            data.status_text = msg.clone();
+            return Handled::Yes;
+        }
+
+        Handled::No
+    }
+}
 
 fn build_topbar() -> impl Widget<App> {
     Flex::row()
