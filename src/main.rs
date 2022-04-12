@@ -34,7 +34,6 @@ fn main() -> Result<(), PlatformError> {
                 bluetooth::{build_ui, BluetoothDelegate},
                 model::bluetooth::App,
             };
-
             let model: App = App::default();
 
             let launcher = AppLauncher::with_window(
@@ -42,8 +41,8 @@ fn main() -> Result<(), PlatformError> {
                     .title("TwitchyLinux - Configure bluetooth")
                     .window_size((700.0, 600.0)),
             );
-            let sink = launcher.get_external_handle();
 
+            let sink = launcher.get_external_handle();
             return launcher
                 .delegate(BluetoothDelegate::new(sink))
                 .launch(model);
