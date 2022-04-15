@@ -6,7 +6,8 @@ pub mod commands {
     use druid::Selector;
 
     // UI -> worker commands
-    pub const CONNECT_TO_DEVICE: Selector<u32> = Selector::new("connect_to_device");
+    pub const CONNECT_TO_DEVICE: Selector<String> = Selector::new("connect_to_device");
+    pub const DISCONNECT_FROM_DEVICE: Selector<String> = Selector::new("disconnect_from_device");
     pub const DO_SCAN: Selector<bool> = Selector::new("do_scan");
     pub const ENUM_DEVICES: Selector<()> = Selector::new("enumerate_devices");
 
@@ -30,4 +31,5 @@ pub struct Device {
     pub name: String,
 
     pub rssi: Option<i16>,
+    pub connected: bool,
 }

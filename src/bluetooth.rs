@@ -8,8 +8,8 @@ use crate::model::bluetooth::{commands, App, Device};
 use crate::Opt;
 use druid::widget::prelude::*;
 use druid::widget::{
-    Button, Controller, CrossAxisAlignment, Flex, Label, List, MainAxisAlignment, Painter,
-    RadioGroup, Scroll, SizedBox, Split, Switch, TextBox,
+    Button, Controller, CrossAxisAlignment, Either, Flex, FlexParams, Label, List,
+    MainAxisAlignment, Painter, RadioGroup, Scroll, SizedBox, Split, Switch, TextBox,
 };
 
 use blurz::{
@@ -76,8 +76,24 @@ impl AppDelegate<App> for BluetoothDelegate<'_> {
         _env: &Env,
     ) -> Handled {
         // UI -> worker
-        if let Some(number) = cmd.get(commands::CONNECT_TO_DEVICE) {
-            // TODO: stuff
+        if let Some(id) = cmd.get(commands::CONNECT_TO_DEVICE) {
+            let dev = BluetoothDevice::new(self.session, id.clone());
+            match dev.connect(6500) {
+                Ok(()) => {}
+                Err(e) => {
+                    println!("connecting to {} failed: {:?}", id, e)
+                }
+            }
+            return Handled::Yes;
+        }
+        if let Some(id) = cmd.get(commands::DISCONNECT_FROM_DEVICE) {
+            let dev = BluetoothDevice::new(self.session, id.clone());
+            match dev.disconnect() {
+                Ok(()) => {}
+                Err(e) => {
+                    println!("disconnecting from {} failed: {:?}", id, e)
+                }
+            }
             return Handled::Yes;
         }
         if let Some(want) = cmd.get(commands::DO_SCAN) {
@@ -108,12 +124,21 @@ impl AppDelegate<App> for BluetoothDelegate<'_> {
                                 addr: device.get_address().unwrap(),
                                 name: device.get_name().unwrap_or("".into()),
                                 rssi: device.get_rssi().ok(),
+                                connected: device.is_connected().unwrap(),
                             }
                         })
                         .collect();
                 }
                 Err(e) => println!("Enum error: {:?}", e),
             };
+
+            data.devices.sort_by(|a, b| match (a.rssi, b.rssi) {
+                (Some(a), Some(b)) => b.cmp(&a),
+                (Some(_), None) => std::cmp::Ordering::Less,
+                (None, Some(_)) => std::cmp::Ordering::Greater,
+                (None, None) => std::cmp::Ordering::Equal,
+            });
+
             return Handled::Yes;
         }
 
@@ -154,7 +179,7 @@ impl<W: Widget<App>> Controller<App, W> for PollController {
             }
             Event::Timer(id) => {
                 if *id == self.timer {
-                    self.timer = ctx.request_timer(std::time::Duration::from_millis(700));
+                    self.timer = ctx.request_timer(std::time::Duration::from_millis(1250));
                     ctx.submit_command(commands::ENUM_DEVICES);
                 }
             }
@@ -213,6 +238,59 @@ fn build_buttons(args: &Opt) -> impl Widget<App> {
         .expand_width()
 }
 
+fn build_device_entry() -> impl Widget<Device> {
+    Flex::column()
+        .main_axis_alignment(MainAxisAlignment::Start)
+        .cross_axis_alignment(CrossAxisAlignment::Center)
+        .with_child(
+            Flex::row()
+                .must_fill_main_axis(true)
+                .main_axis_alignment(MainAxisAlignment::SpaceBetween)
+                .cross_axis_alignment(CrossAxisAlignment::Start)
+                .with_child(
+                    Label::new(|item: &Device, _env: &_| {
+                        if &item.name == "" {
+                            "unnamed device".to_string()
+                        } else {
+                            item.name.clone()
+                        }
+                    })
+                    .fix_width(205.),
+                )
+                .with_flex_child(
+                    Label::new(|item: &Device, _env: &_| {
+                        if let Some(rssi) = &item.rssi {
+                            format!("{}", rssi)
+                        } else {
+                            "   ".to_string()
+                        }
+                    }),
+                    FlexParams::new(0.1, CrossAxisAlignment::Center),
+                )
+                //.with_flex_child(Label::new(""), 0.8)
+                .with_flex_child(
+                    Label::new(|item: &Device, _env: &_| item.addr.clone()),
+                    FlexParams::new(0.1, CrossAxisAlignment::End),
+                )
+                .with_flex_child(
+                    Either::new(
+                        |item: &Device, _env: &_| item.connected,
+                        Button::new("Disconnect").on_click(move |ctx, data: &mut Device, _env| {
+                            ctx.submit_command(
+                                commands::DISCONNECT_FROM_DEVICE.with(data.id.clone()),
+                            )
+                        }),
+                        Button::new("Connect").on_click(move |ctx, data: &mut Device, _env| {
+                            ctx.submit_command(commands::CONNECT_TO_DEVICE.with(data.id.clone()))
+                        }),
+                    ),
+                    FlexParams::new(0.2, CrossAxisAlignment::End),
+                )
+                .with_spacer(0.05),
+        )
+    //.debug_paint_layout()
+}
+
 pub fn build_ui(args: &Opt) -> impl Widget<App> {
     Flex::column()
         .must_fill_main_axis(true)
@@ -227,12 +305,10 @@ pub fn build_ui(args: &Opt) -> impl Widget<App> {
                 .main_axis_alignment(MainAxisAlignment::Start)
                 .cross_axis_alignment(CrossAxisAlignment::Center)
                 .with_flex_child(
-                    Scroll::new(
-                        List::new(|| Label::new(|item: &Device, _env: &_| format!("{:?}", item)))
-                            .lens(App::devices),
-                    ),
+                    Scroll::new(List::new(build_device_entry).lens(App::devices)).vertical(),
                     0.9,
-                ),
+                )
+                .padding(12.),
             0.9,
         )
         .with_default_spacer()
